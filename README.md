@@ -199,8 +199,4 @@ year, location,     prediction, lower, upper, interval
 - Luedeling, E., Zhang, M., & Girvetz, E. H. (2009). Climatic changes lead to declining winter chill for fruit and nut trees in California during 1950–2099. *PLOS ONE*, 4(7), e6166.
 - Zohner, C. M., & Renner, S. S. (2014). Common garden comparison of the leaf-out phenology of woody species from different native climates. *Ecology Letters*, 17(9), 1083–1092.
 
----
 
-## 🏆 Competition
-
-[GMU Cherry Blossom Peak Bloom Prediction Competition](https://competition.statistics.gmu.edu) · Deadline: February 28, 2026
