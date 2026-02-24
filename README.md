@@ -1,4 +1,4 @@
-# 🌸 Cherry Blossom Peak Bloom Prediction 2026
+# Cherry Blossom Peak Bloom Prediction 2026
 
 **GMU Cherry Blossom Prediction Competition** · [competition.statistics.gmu.edu](https://competition.statistics.gmu.edu)
 
@@ -6,7 +6,7 @@ A two-stage biological-statistical ensemble model for predicting peak cherry blo
 
 ---
 
-## 📋 Abstract
+## Abstract
 
 We present a two-stage ensemble model for predicting peak cherry blossom bloom dates at five locations (Washington DC, Kyoto, Liestal, Vancouver, and New York City) for the 2026 GMU Cherry Blossom Prediction Competition. Stage 1 applies a process-based dormancy-forcing framework grounded in tree phenology: dormancy release is modeled using the Utah Chill Unit (CU) method (Richardson et al., 1974), requiring accumulation of 1,200 CU over the October–March chilling window, after which heat forcing is tracked via hourly Growing Degree Hours (GDH) computed with a triangular-sigmoid response function (effective range 4–36°C). Both stages are driven by ERA5 reanalysis data (Open-Meteo archive, 1950–2026) providing over 3.3 million hourly temperature observations across all sites.
 
@@ -16,7 +16,7 @@ Out-of-sample LOOCV performance is strong for Kyoto (RMSE = 2.83 days, MAE = 2.2
 
 ---
 
-## 🔮 2026 Predictions
+## 2026 Predictions
 
 | Location | Prediction | Lower (90% PI) | Upper (90% PI) | Method |
 |---|---|---|---|---|
@@ -30,7 +30,7 @@ Out-of-sample LOOCV performance is strong for Kyoto (RMSE = 2.83 days, MAE = 2.2
 
 ---
 
-## 🏗️ Model Architecture
+## Model Architecture
 
 ```
 ERA5 Hourly Temperatures (1950–2026)
@@ -66,7 +66,7 @@ ERA5 Hourly Temperatures (1950–2026)
 
 ---
 
-## 📊 Model Performance (LOOCV)
+## Model Performance (LOOCV)
 
 | Location | RMSE (days) | MAE (days) | n (years) |
 |---|---|---|---|
@@ -79,7 +79,7 @@ ERA5 Hourly Temperatures (1950–2026)
 
 ---
 
-## 📦 Data Sources
+## Data Sources
 
 | Source | Description | Coverage |
 |---|---|---|
@@ -89,7 +89,7 @@ ERA5 Hourly Temperatures (1950–2026)
 
 ---
 
-## 🔬 Methods Detail
+## Methods Detail
 
 ### Stage 1A — Utah Chill Unit Model
 Dormancy depth is tracked hourly using the Richardson et al. (1974) chill unit scale, which assigns weights based on temperature ranges:
@@ -141,7 +141,7 @@ Prediction intervals use a weighted blend of the model's 90% PI half-width and 1
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 .
@@ -154,7 +154,7 @@ Prediction intervals use a weighted blend of the model's 90% PI half-width and 1
 
 ---
 
-## 🚀 Reproducing the Analysis
+## Reproducing the Analysis
 
 ### Requirements
 
@@ -180,7 +180,7 @@ The script will:
 
 ---
 
-## 📄 Submission Format
+## Submission Format
 
 ```
 year, location,     prediction, lower, upper, interval
@@ -193,7 +193,7 @@ year, location,     prediction, lower, upper, interval
 
 ---
 
-## 📚 References
+## References
 
 - Richardson, E. A., Seeley, S. D., & Walker, D. R. (1974). A model for estimating the completion of rest for Redhaven and Elberta peach trees. *HortScience*, 9(4), 331–332.
 - Luedeling, E., Zhang, M., & Girvetz, E. H. (2009). Climatic changes lead to declining winter chill for fruit and nut trees in California during 1950–2099. *PLOS ONE*, 4(7), e6166.
