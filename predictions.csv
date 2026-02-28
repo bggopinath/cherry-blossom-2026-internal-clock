@@ -1,0 +1,6 @@
+year,location,prediction,lower,upper,interval
+2026,kyoto,93,86,100,90
+2026,liestal,93,73,113,90
+2026,newyorkcity,96,85,107,90
+2026,vancouver,89,78,100,90
+2026,washingtondc,92,83,101,90
