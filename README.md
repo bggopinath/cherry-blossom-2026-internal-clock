@@ -10,7 +10,7 @@ A two-stage biological-statistical ensemble model for predicting peak cherry blo
 
 We present a two-stage ensemble model for predicting peak cherry blossom bloom dates at five locations (Washington DC, Kyoto, Liestal, Vancouver, and New York City) for the 2026 GMU Cherry Blossom Prediction Competition. Stage 1 applies a process-based dormancy-forcing framework grounded in tree phenology: dormancy release is modeled using the Utah Chill Unit (CU) method (Richardson et al., 1974), requiring accumulation of 1,200 CU over the October–March chilling window, after which heat forcing is tracked via hourly Growing Degree Hours (GDH) computed with a triangular-sigmoid response function (effective range 4–36°C). Both stages are driven by ERA5 reanalysis data (Open-Meteo archive, 1950–2026) providing over 3.3 million hourly temperature observations across all sites.
 
-Stage 2 applies a location-specific linear regression model with predictors comprising Feb–Mar mean temperature, January mean temperature, December mean temperature (prior year), and a linear year trend to capture long-term advancement of bloom dates under climate change. The Feb–Mar 2026 temperature input is drawn from the ECMWF SEAS5 51-member seasonal ensemble forecast, with a fallback to historical means where the forecast is unavailable or implausible. Predictions from the statistical model are blended with a five-analog-year ensemble — selected by closest January temperature match — using inverse leave-one-out cross-validation (LOOCV) RMSE weighting. Vancouver, with only four years of historical bloom data, relies exclusively on the analog method.
+Stage 2 applies a location-specific linear regression model with predictors comprising Feb–Mar mean temperature, January mean temperature, December mean temperature (prior year), and a linear year trend to capture long-term advancement of bloom dates under climate change. The Feb–Mar 2026 temperature input is drawn from the ECMWF SEAS5 51-member seasonal ensemble forecast, with a fallback to historical means where the forecast is unavailable or implausible (>5°C deviation). Predictions from the statistical model are blended with a five-analog-year ensemble — selected by closest January temperature match — using inverse leave-one-out cross-validation (LOOCV) RMSE weighting. Vancouver, with only four years of historical bloom data, relies exclusively on the analog method.
 
 Out-of-sample LOOCV performance is strong for Kyoto (RMSE = 2.83 days, MAE = 2.26 days, n = 75) and Washington DC (RMSE = 4.16 days, MAE = 3.23 days, n = 67), and moderate for Liestal (RMSE = 6.09 days, MAE = 5.09 days, n = 75), consistent with that site's greater interannual bloom variability. Final 2026 point predictions and 90% prediction intervals are: Washington DC April 2 (March 24 – April 11), Kyoto April 3 (March 27 – April 10), Liestal April 3 (March 14 – April 23), Vancouver March 30 (March 19 – April 10), and New York City April 6 (March 26 – April 17). New York City predictions are derived by applying a four-day phenological offset from Washington DC, reflecting the northward delay in spring warming, with an expanded uncertainty interval. All predictions reflect the continued advancement of bloom dates relative to 20th-century baselines, consistent with regional warming trends captured by the year-trend term across all fitted models.
 
@@ -37,7 +37,7 @@ ERA5 Hourly Temperatures (1950–2026)
           │
           ▼
 ┌─────────────────────────┐
-│  STAGE 1: BIOLOGICAL    │
+│  STAGE 1A: DORMANCY     │
 │  Utah Chill Unit Model  │
 │  Requirement: 1,200 CU  │
 │  (Richardson et al. '74)│
@@ -79,20 +79,11 @@ ERA5 Hourly Temperatures (1950–2026)
 
 ---
 
-## Data Sources
-
-| Source | Description | Coverage |
-|---|---|---|
-| [GMU GitHub](https://github.com/GMU-CherryBlossomCompetition/peak-bloom-prediction) | Historical bloom dates | Kyoto (~837 yrs), DC (105 yrs), Liestal (132 yrs), Vancouver (4 yrs) |
-| [Open-Meteo ERA5 Archive](https://open-meteo.com) | Hourly 2m temperature reanalysis | 1950–2026, all 5 locations |
-| [ECMWF SEAS5 via Open-Meteo](https://open-meteo.com) | Seasonal forecast, Feb–Mar 2026 | 51-member ensemble |
-
----
-
 ## Methods Detail
 
 ### Stage 1A — Utah Chill Unit Model
-Dormancy depth is tracked hourly using the Richardson et al. (1974) chill unit scale, which assigns weights based on temperature ranges:
+
+Dormancy depth is tracked hourly using the Richardson et al. (1974) chill unit scale, which assigns weights based on temperature ranges. Accumulation begins October 1; dormancy is considered broken when cumulative CU ≥ 1,200 (standard requirement for *Prunus × yedoensis* Yoshino cherry).
 
 | Temperature Range | Chill Units/hour |
 |---|---|
@@ -104,40 +95,55 @@ Dormancy depth is tracked hourly using the Richardson et al. (1974) chill unit s
 | 15.9–18.0°C | −0.5 |
 | > 18.0°C | −1.0 |
 
-Accumulation begins October 1. Dormancy is considered broken when cumulative CU ≥ 1,200 (standard requirement for *Prunus × yedoensis* Yoshino cherry).
-
 ### Stage 1B — Hourly GDH Forcing
-Post-dormancy heat accumulation uses a triangular-sigmoid GDH function:
+
+Post-dormancy heat accumulation uses a triangular-sigmoid GDH function that tapers cleanly to zero at 36°C:
 
 ```
-GDH(T) = max(0, T − 4) × max(0, 1 − max(0, T − 36) / 11)
+GDH(T) = max(0, T − 4) × min(1, max(0, (36 − T) / 11))
 ```
 
-Effective forcing range: 4–36°C, peak response ~16–24°C.
+Effective forcing range: 4–36°C, peak response ~16–24°C. The median cumulative GDH at observed historical bloom defines the location-specific forcing threshold.
 
 ### Stage 2 — Statistical Correction
-Location-specific OLS regression:
+
+Location-specific OLS regression fit to the full historical ERA5 record:
 
 ```
 bloom_doy ~ feb_mar_tavg + jan_tavg + dec_tavg + year_centered
 ```
 
-- **feb_mar_tavg**: Feb–Mar mean temperature (SEAS5 forecast for 2026)
-- **jan_tavg**: January mean temperature (ERA5 observed for Jan 2026)
-- **dec_tavg**: December mean temperature of prior year (ERA5 observed Dec 2025)
-- **year_centered**: Year − 1990 (captures long-term trend)
+- **feb_mar_tavg**: Feb–Mar mean temperature (ECMWF SEAS5 51-member forecast for 2026; falls back to historical mean if forecast deviates > 5°C)
+- **jan_tavg**: January mean temperature (ERA5 observed, Jan 2026)
+- **dec_tavg**: December mean temperature of prior year (ERA5 observed, Dec 2025)
+- **year_centered**: Year − 1990 (captures long-term phenological trend)
 
 Model R²: Kyoto 0.691, Liestal 0.762, Washington DC 0.665 (all p < 10⁻¹³).
 
 ### Ensemble Weighting
-Point estimates blend statistical model and analog ensemble using inverse-LOOCV-RMSE weights:
+
+Point estimates blend the statistical model and analog ensemble using inverse-LOOCV-RMSE weights:
 
 ```
 prediction = (pred_model / RMSE_model + pred_analog / RMSE_analog) /
              (1/RMSE_model + 1/RMSE_analog)
 ```
 
-Prediction intervals use a weighted blend of the model's 90% PI half-width and 1.645 × analog SD.
+Prediction intervals use a weighted blend of the regression model's 90% PI half-width and 1.645 × analog SD. Vancouver uses analog only (n = 4, insufficient for regression).
+
+### New York City
+
+Derived from Washington DC via a four-day empirical offset reflecting the northward delay in spring warming, with the uncertainty interval widened by ±2 days to reflect the additional transfer uncertainty.
+
+---
+
+## Data Sources
+
+| Source | Description | Coverage |
+|---|---|---|
+| [GMU GitHub](https://github.com/GMU-CherryBlossomCompetition/peak-bloom-prediction) | Historical bloom dates | Kyoto (~837 yrs), DC (105 yrs), Liestal (132 yrs), Vancouver (4 yrs) |
+| [Open-Meteo ERA5 Archive](https://open-meteo.com) | Hourly 2m temperature reanalysis | 1950–2026, all 5 locations |
+| [ECMWF SEAS5 via Open-Meteo](https://open-meteo.com/en/docs/seasonal-weather-api) | Seasonal forecast, Feb–Mar 2026 | 51-member ensemble |
 
 ---
 
@@ -146,49 +152,45 @@ Prediction intervals use a weighted blend of the model's 90% PI half-width and 1
 ```
 .
 ├── README.md
-├── predictions.csv          # Final submission file
-├── bloom_model.R            # Full modelling pipeline
-├── bloom_predictions_2026.png
-└── loocv_residuals.png
+├── predictions.csv            # Final submission file
+├── cherryblossom_2026.R       # Full modelling pipeline
+├── bloom_predictions_2026.png # Final prediction chart with 90% PIs
+└── loocv_residuals.png        # Out-of-sample residual diagnostics
 ```
 
 ---
 
 ## Reproducing the Analysis
 
-### Requirements
+**Requirements:** R ≥ 4.2 with internet access. All packages auto-install on first run.
 
 ```r
 install.packages(c("tidyverse", "lubridate", "httr", "jsonlite", "broom", "patchwork"))
-```
-
-### Run
-
-```r
-source("bloom_model.R")
+source("cherryblossom_2026.R")
 ```
 
 The script will:
 1. Download historical bloom dates from the GMU GitHub repository
-2. Fetch ERA5 hourly temperature data from Open-Meteo (~2–3 min)
-3. Fetch the ECMWF SEAS5 seasonal forecast
-4. Run the Utah CU + GDH biological model
+2. Fetch ERA5 hourly temperature data from Open-Meteo (~5–10 min across 5 locations)
+3. Fetch the ECMWF SEAS5 Feb–Mar 2026 seasonal forecast
+4. Run the Utah CU dormancy model and GDH forcing accumulation
 5. Fit and LOOCV-validate location-specific regression models
-6. Output `predictions.csv` and diagnostic plots
+6. Blend model and analog predictions using inverse-RMSE weighting
+7. Output `predictions.csv` and diagnostic plots
 
-> **Note:** Requires an internet connection. ERA5 data fetch covers 1950–2026 across 5 locations (~3.3M rows) and takes approximately 2–3 minutes.
+> **Note:** Requires an internet connection. ERA5 data covers 1950–2026 across 5 locations (~3.3M hourly rows); fetch takes approximately 5–10 minutes.
 
 ---
 
-## Submission Format
+## Submission
 
 ```
 year, location,     prediction, lower, upper, interval
-2026, kyoto,               93,    86,   100,       90
-2026, liestal,             93,    73,   113,       90
-2026, newyorkcity,         96,    85,   107,       90
-2026, vancouver,           89,    78,   100,       90
-2026, washingtondc,        92,    83,   101,       90
+2026, kyoto,                93,    86,   100,       90
+2026, liestal,              93,    73,   113,       90
+2026, newyorkcity,          96,    85,   107,       90
+2026, vancouver,            89,    78,   100,       90
+2026, washingtondc,         92,    83,   101,       90
 ```
 
 ---
@@ -197,6 +199,5 @@ year, location,     prediction, lower, upper, interval
 
 - Richardson, E. A., Seeley, S. D., & Walker, D. R. (1974). A model for estimating the completion of rest for Redhaven and Elberta peach trees. *HortScience*, 9(4), 331–332.
 - Luedeling, E., Zhang, M., & Girvetz, E. H. (2009). Climatic changes lead to declining winter chill for fruit and nut trees in California during 1950–2099. *PLOS ONE*, 4(7), e6166.
+- Luedeling, E. (2012). Climate change impacts on winter chill for temperate fruit and nut production: A review. *Scientia Horticulturae*, 144, 218–229.
 - Zohner, C. M., & Renner, S. S. (2014). Common garden comparison of the leaf-out phenology of woody species from different native climates. *Ecology Letters*, 17(9), 1083–1092.
-
-
